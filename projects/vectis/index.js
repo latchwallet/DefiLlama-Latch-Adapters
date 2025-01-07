@@ -21,26 +21,30 @@ const vaultUserAddresses = [
   new PublicKey("ARLwHJ3CYLkVTeW3nHvPBmGQ7SLQdhZbAkWHzYrq57rt"), //Vault D
   new PublicKey("MzEPFp2LwCSMMPHLQsqfE7SN6xkPHZ8Uym2HfrH7g5P"), //Yield Compass A
   new PublicKey("CMiyE7M98DSPBEhQGTA6CzNodWkNuuW4y9HoocfK75nG"), //Yield Compass B
-  new PublicKey("CnaXXuzc2S5UFSGoBRuKVNnzXBvxbaMwq6hZu5m91CAV") //LST Yield Compass
+  new PublicKey("CnaXXuzc2S5UFSGoBRuKVNnzXBvxbaMwq6hZu5m91CAV"),//LST Yield Compass
+  new PublicKey("Fwfu73gfD5KzqtSAVKqmW414rshmYpoHY4nJ8LWqPyHB"), //Prime standard
+  new PublicKey("6NaF3EpArzHJ4x5GeTzjcUcdic29Rt4sy4pn6LP7iJ4r"), //Prime A
+  new PublicKey("2XnEYxNovTmYDXkDb7zninKttt3j9i67sj96H7CV5wZw") // JLP Navigator II
+
 
 
 ];
 /**
  * Vault Equity Calculation Formula:
  * VaultEquity = NetSpotValue + UnrealizedPnL
- * 
+ *
  * Where:
  * 1. NetSpotValue = Σ(spotPosition.scaledBalance * spotMarketPrice * direction)
  *    - spotPosition.scaledBalance: The size of the spot position
  *    - spotMarketPrice: Current market price of the asset
  *    - direction: 1 for deposits (longs), -1 for borrows (shorts)
- * 
+ *
  * 2. UnrealizedPnL = Σ(perpPosition.baseAssetAmount * oraclePrice + perpPosition.quoteAssetAmount + fundingPnL)
  *    For each perpetual position:
  *    - baseAssetAmount * oraclePrice: Current value of the base asset position (e.g., BTC, ETH, SOL)
  *    - quoteAssetAmount: Amount of quote currency (USDC) in the position
  *    - fundingPnL: (market.amm.cumulativeFundingRate - position.lastCumulativeFundingRate) * position.baseAssetAmount / FUNDING_RATE_PRECISION
- * 
+ *
  */
 async function tvl(api) {
   // Get all vault accounts first
@@ -50,24 +54,24 @@ async function tvl(api) {
   // Collect unique market indices upfront
   const allSpotIndices = new Set()
   const allPerpIndices = new Set()
-  
+
   deserializedData.forEach(({ spotPositions, perpPositions }) => {
     spotPositions?.forEach(pos => allSpotIndices.add(pos.market_index))
     perpPositions?.forEach(pos => allPerpIndices.add(pos.market_index))
   })
 
-  // Batch fetch 
+  // Batch fetch
   const allKeys = [
     ...[...allSpotIndices].map(index => getVaultPublicKey('spot_market', index)),
     ...[...allPerpIndices].map(index => getVaultPublicKey('perp_market', index))
   ]
-  
+
   const allAccounts = await getMultipleAccounts(allKeys)
-  
+
   // Create lookup maps
   const spotAccountMap = {}
   const perpAccountMap = {}
-  
+
   let offset = 0
   ;[...allSpotIndices].forEach((index, i) => {
     spotAccountMap[index] = allAccounts[i]
@@ -106,4 +110,3 @@ async function tvl(api) {
     }
   }
 }
-
